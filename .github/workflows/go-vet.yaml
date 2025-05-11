@@ -21,7 +21,7 @@ jobs:
         with:
           go-version-file: "${{ inputs.path }}/go.mod"
 
-      - name: Unit tests
+      - name: Go vet
         run: |
           cd ${{ inputs.path }}
-          go test -cover ./...
+          go vet ./...

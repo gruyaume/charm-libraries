@@ -29,9 +29,11 @@ jobs:
     uses: ./.github/workflows/go-vet.yaml
     with:
       path: ${{ matrix.path }}
-
-  # go-vet:
-  #   uses: ./.github/workflows/go-vet.yaml
-
-  # go-lint:
-  #   uses: ./.github/workflows/go-lint.yaml
+  
+  go-lint:
+    strategy:
+      matrix:
+        path: [certificates, prometheus, tracing]
+    uses: ./.github/workflows/go-lint.yaml
+    with:
+      path: ${{ matrix.path }}
