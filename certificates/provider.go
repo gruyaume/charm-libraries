@@ -245,3 +245,54 @@ func loadCertificateSigningRequest(pemString string) (CertificateSigningRequest,
 		LocalityName:        localityName,
 	}, nil
 }
+
+func (p *IntegrationProvider) GetIssuedCertificates(relationID string) ([]*ProviderCertificate, error) {
+	unitName := p.HookContext.Environment.JujuUnitName()
+
+	relationData, err := p.HookContext.Commands.RelationGet(&commands.RelationGetOptions{
+		ID:     relationID,
+		UnitID: unitName,
+		App:    true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not get relation data: %w", err)
+	}
+
+	if relationData == nil {
+		return nil, fmt.Errorf("relation data is empty")
+	}
+
+	certificatesStr, ok := relationData["certificates"]
+	if !ok {
+		return nil, fmt.Errorf("relation data does not contain certificates")
+	}
+
+	var certificates []map[string]string
+
+	err = json.Unmarshal([]byte(certificatesStr), &certificates)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal certificates: %w", err)
+	}
+
+	providerCertificates := make([]*ProviderCertificate, 0)
+	for _, certData := range certificates {
+		certificate := &ProviderCertificate{
+			Certificate:               certData["certificate"],
+			CA:                        certData["ca"],
+			CertificateSigningRequest: certData["certificate_signing_request"],
+		}
+		var chain []string
+		chainJSON, ok := certData["chain"]
+		if !ok {
+			return nil, fmt.Errorf("relation data does not contain chain")
+		}
+		if err := json.Unmarshal([]byte(chainJSON), &chain); err != nil {
+			return nil, fmt.Errorf("could not unmarshal chain array: %w", err)
+		}
+		certificate.Chain = chain
+
+		providerCertificates = append(providerCertificates, certificate)
+	}
+
+	return providerCertificates, nil
+}
