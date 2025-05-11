@@ -1,0 +1,27 @@
+name: Go Vet
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: Path to the charm directory
+        type: string
+        required: true
+
+jobs:
+  go-vet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: "${{ inputs.path }}/go.mod"
+
+      - name: Go vet
+        run: |
+          cd ${{ inputs.path }}
+          go vet ./...

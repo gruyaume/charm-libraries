@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.ref == 'refs/heads/main' && format('ignore-main-{0}', github.run_id) || format('{0}-{1}', github.workflow, github.ref_name) }}
+  cancel-in-progress: true
+
+jobs:
+  go-unit-tests:
+    strategy:
+      matrix:
+        path: [certificates, prometheus, tracing]
+    uses: ./.github/workflows/go-unittest.yaml
+    with:
+      path: ${{ matrix.path }}
+  
+  go-vet:
+    strategy:
+      matrix:
+        path: [certificates, prometheus, tracing]
+    uses: ./.github/workflows/go-vet.yaml
+    with:
+      path: ${{ matrix.path }}
+  
+  go-lint:
+    strategy:
+      matrix:
+        path: [certificates, prometheus, tracing]
+    uses: ./.github/workflows/go-lint.yaml
+    with:
+      path: ${{ matrix.path }}
