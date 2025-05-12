@@ -138,6 +138,23 @@ func (p *IntegrationProvider) GetOutstandingCertificateRequests() ([]RequirerCer
 	return requirerCertificateRequests, nil
 }
 
+// alreadyProvided checks if we've already pushed this CSR into the relation.
+func (p *IntegrationProvider) AlreadyProvided(relationID string, csr string) bool {
+	issued, err := p.GetIssuedCertificates(relationID)
+	if err != nil {
+		p.HookContext.Commands.JujuLog(commands.Warning, "Could not get issued certificates", err.Error())
+		return false
+	}
+
+	for _, pc := range issued {
+		if pc.CertificateSigningRequest == csr {
+			return true
+		}
+	}
+
+	return false
+}
+
 type SetRelationCertificateOptions struct {
 	RelationID                string
 	CA                        string
