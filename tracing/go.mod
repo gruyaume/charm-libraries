@@ -3,7 +3,7 @@ module github.com/gruyaume/charm-libraries/tracing
 go 1.24.0
 
 require (
-	github.com/gruyaume/goops v0.0.11
+	github.com/gruyaume/goops v0.0.12
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0
 	go.opentelemetry.io/otel/sdk v1.35.0
@@ -27,4 +27,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/grpc v1.71.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

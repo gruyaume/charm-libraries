@@ -7,7 +7,6 @@ import (
 	"github.com/canonical/pebble/client"
 	"github.com/gruyaume/goops"
 	"github.com/gruyaume/goops/commands"
-	"github.com/gruyaume/goops/metadata"
 	"gopkg.in/yaml.v3"
 )
 
@@ -102,17 +101,12 @@ type PebbleLayer struct {
 func (i *Integration) getLabels() (map[string]string, error) {
 	unitName := i.HookContext.Environment.JujuUnitName()
 
-	metadata, err := metadata.GetCharmMetadata(i.HookContext.Environment)
-	if err != nil {
-		return nil, fmt.Errorf("could not get charm metadata: %w", err)
-	}
-
 	modelName := i.HookContext.Environment.JujuModelName()
 	modelUUID := i.HookContext.Environment.JujuModelUUID()
 
 	labels := map[string]string{
 		"product":         "Juju",
-		"charm":           metadata.Name,
+		"charm":           i.HookContext.Metadata.Name,
 		"juju_model":      modelName,
 		"juju_model_uuid": modelUUID,
 		"juju_unit":       unitName,
