@@ -17,7 +17,7 @@ jobs:
   go-unit-tests:
     strategy:
       matrix:
-        path: [certificates, prometheus, tracing]
+        path: [certificates, prometheus, tracing, logging]
     uses: ./.github/workflows/go-unittest.yaml
     with:
       path: ${{ matrix.path }}
@@ -25,7 +25,7 @@ jobs:
   go-vet:
     strategy:
       matrix:
-        path: [certificates, prometheus, tracing]
+        path: [certificates, prometheus, tracing, logging]
     uses: ./.github/workflows/go-vet.yaml
     with:
       path: ${{ matrix.path }}
@@ -33,7 +33,7 @@ jobs:
   go-lint:
     strategy:
       matrix:
-        path: [certificates, prometheus, tracing]
+        path: [certificates, prometheus, tracing, logging]
     uses: ./.github/workflows/go-lint.yaml
     with:
       path: ${{ matrix.path }}
