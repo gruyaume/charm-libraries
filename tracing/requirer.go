@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/gruyaume/goops"
-	"github.com/gruyaume/goops/commands"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -17,7 +16,6 @@ import (
 )
 
 type Integration struct {
-	HookContext  *goops.HookContext
 	RelationName string
 	ServiceName  string
 }
@@ -40,9 +38,7 @@ type ProviderReceivers struct {
 }
 
 func (i *Integration) GetRelationID() (string, error) {
-	relationIDs, err := i.HookContext.Commands.RelationIDs(&commands.RelationIDsOptions{
-		Name: i.RelationName,
-	})
+	relationIDs, err := goops.GetRelationIDs(i.RelationName)
 	if err != nil {
 		return "", fmt.Errorf("could not get relation IDs: %w", err)
 	}
@@ -57,7 +53,7 @@ func (i *Integration) GetRelationID() (string, error) {
 func (i *Integration) PublishSupportedProtocols(protocols []Protocol) {
 	relationID, err := i.GetRelationID()
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Debug, "Could not get relation ID:", err.Error())
+		goops.LogDebugf("Could not get relation ID: %s", err.Error())
 		return
 	}
 
@@ -68,7 +64,7 @@ func (i *Integration) PublishSupportedProtocols(protocols []Protocol) {
 
 	receiversBytes, err := json.Marshal(supportedProtocols)
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Error, "Could not marshal supported protocols to JSON:", err.Error())
+		goops.LogErrorf("Could not marshal supported protocols to JSON: %s", err.Error())
 		return
 	}
 
@@ -76,13 +72,9 @@ func (i *Integration) PublishSupportedProtocols(protocols []Protocol) {
 		"receivers": string(receiversBytes),
 	}
 
-	err = i.HookContext.Commands.RelationSet(&commands.RelationSetOptions{
-		ID:   relationID,
-		App:  true,
-		Data: relationData,
-	})
+	err = goops.SetAppRelationData(relationID, relationData)
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Error, "Could not set relation data:", err.Error())
+		goops.LogErrorf("Could not set relation data: %s", err.Error())
 		return
 	}
 }
@@ -94,10 +86,6 @@ func (i *Integration) InitTracer(ctx context.Context) (*sdktrace.TracerProvider,
 		return nil, fmt.Errorf("no gRPC receiver found")
 	}
 
-	jujuModel := i.HookContext.Environment.JujuModelName()
-	jujuModelUUID := i.HookContext.Environment.JujuModelUUID()
-	jujuUnit := i.HookContext.Environment.JujuUnitName()
-
 	exp, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithEndpoint(endpoint),
 		otlptracegrpc.WithInsecure(),
@@ -108,12 +96,14 @@ func (i *Integration) InitTracer(ctx context.Context) (*sdktrace.TracerProvider,
 
 	sampler := sdktrace.AlwaysSample()
 
+	env := goops.ReadEnv()
+
 	res, err := sdkresource.New(ctx,
 		sdkresource.WithAttributes(
 			semconv.ServiceNameKey.String(i.ServiceName),
-			attribute.String("juju_unit", jujuUnit),
-			attribute.String("juju_model", jujuModel),
-			attribute.String("juju_model_uuid", jujuModelUUID),
+			attribute.String("juju_unit", env.UnitName),
+			attribute.String("juju_model", env.ModelName),
+			attribute.String("juju_model_uuid", env.ModelUUID),
 		),
 	)
 	if err != nil {
@@ -135,36 +125,30 @@ func (i *Integration) InitTracer(ctx context.Context) (*sdktrace.TracerProvider,
 func (i *Integration) GetEndpoint() string {
 	relationID, err := i.GetRelationID()
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Debug, "Could not get relation ID:", err.Error())
+		goops.LogDebugf("Could not get relation ID: %s", err.Error())
 		return ""
 	}
 
-	relations, err := i.HookContext.Commands.RelationList(&commands.RelationListOptions{
-		ID: relationID,
-	})
+	relations, err := goops.ListRelations(relationID)
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Debug, "Could not get relation list:", err.Error())
+		goops.LogDebugf("Could not get relation list: %s", err.Error())
 		return ""
 	}
 
 	if len(relations) == 0 {
-		i.HookContext.Commands.JujuLog(commands.Debug, "No relations found for ID:", relationID)
+		goops.LogDebugf("No relations found for ID: %s", relationID)
 		return ""
 	}
 
-	relationData, err := i.HookContext.Commands.RelationGet(&commands.RelationGetOptions{
-		ID:     relationID,
-		UnitID: relations[0],
-		App:    true,
-	})
+	relationData, err := goops.GetAppRelationData(relationID, relations[0])
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Debug, "Could not get relation data:", err.Error())
+		goops.LogDebugf("Could not get relation data: %s", err.Error())
 		return ""
 	}
 
 	receiversStr := relationData["receivers"]
 	if receiversStr == "" {
-		i.HookContext.Commands.JujuLog(commands.Debug, "No receivers found in relation data")
+		goops.LogDebugf("No receivers found in relation data for ID: %s", relationID)
 		return ""
 	}
 
@@ -172,12 +156,12 @@ func (i *Integration) GetEndpoint() string {
 
 	err = json.Unmarshal([]byte(receiversStr), &providerReceivers)
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Debug, "Could not unmarshal receivers:", err.Error())
+		goops.LogDebugf("Could not unmarshal receivers: %s", err.Error())
 		return ""
 	}
 
 	if len(providerReceivers) == 0 {
-		i.HookContext.Commands.JujuLog(commands.Debug, "No provider receivers found")
+		goops.LogDebugf("No provider receivers found in relation data for ID: %s", relationID)
 		return ""
 	}
 
@@ -187,7 +171,6 @@ func (i *Integration) GetEndpoint() string {
 		}
 	}
 
-	i.HookContext.Commands.JujuLog(commands.Debug, "No gRPC receiver found")
-
+	goops.LogDebugf("No gRPC receiver found in relation data for ID: %s", relationID)
 	return ""
 }

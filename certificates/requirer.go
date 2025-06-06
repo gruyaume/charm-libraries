@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/gruyaume/goops"
-	"github.com/gruyaume/goops/commands"
 )
 
 const (
@@ -36,7 +35,6 @@ type CertificateRequestAttributes struct {
 }
 
 type IntegrationRequirer struct {
-	HookContext        *goops.HookContext
 	RelationName       string
 	CertificateRequest CertificateRequestAttributes
 }
@@ -49,9 +47,7 @@ type ProviderCertificate struct {
 }
 
 func (i *IntegrationRequirer) GetRelationID() (string, error) {
-	relationIDs, err := i.HookContext.Commands.RelationIDs(&commands.RelationIDsOptions{
-		Name: i.RelationName,
-	})
+	relationIDs, err := goops.GetRelationIDs(i.RelationName)
 	if err != nil {
 		return "", fmt.Errorf("could not get relation IDs: %w", err)
 	}
@@ -70,7 +66,7 @@ func (i *IntegrationRequirer) Request() error {
 	}
 
 	if i.certificateRequested() {
-		i.HookContext.Commands.JujuLog(commands.Info, "Certificate already requested")
+		goops.LogInfof("Certificate already requested for relation ID %s", relationID)
 		return nil
 	}
 
@@ -98,13 +94,7 @@ func (i *IntegrationRequirer) Request() error {
 		"certificate_signing_requests": string(csrsBytes),
 	}
 
-	relationSetOpts := &commands.RelationSetOptions{
-		ID:   relationID,
-		App:  false,
-		Data: relationData,
-	}
-
-	err = i.HookContext.Commands.RelationSet(relationSetOpts)
+	err = goops.SetUnitRelationData(relationID, relationData)
 	if err != nil {
 		return fmt.Errorf("could not set relation data: %w", err)
 	}
@@ -115,17 +105,13 @@ func (i *IntegrationRequirer) Request() error {
 func (i *IntegrationRequirer) certificateRequested() bool {
 	relationID, err := i.GetRelationID()
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Warning, "Could not get relation ID", err.Error())
+		goops.LogWarningf("Could not get relation ID: %v", err)
 		return false
 	}
 
-	unitName := i.HookContext.Environment.JujuUnitName()
+	env := goops.ReadEnv()
 
-	relationData, err := i.HookContext.Commands.RelationGet(&commands.RelationGetOptions{
-		ID:     relationID,
-		UnitID: unitName,
-		App:    false,
-	})
+	relationData, err := goops.GetUnitRelationData(relationID, env.UnitName)
 	if err != nil {
 		return false
 	}
@@ -195,9 +181,7 @@ func (i *IntegrationRequirer) GetProviderCertificate() ([]*ProviderCertificate, 
 		return nil, fmt.Errorf("could not get relation ID: %v", err)
 	}
 
-	relations, err := i.HookContext.Commands.RelationList(&commands.RelationListOptions{
-		ID: relationID,
-	})
+	relations, err := goops.ListRelations(relationID)
 	if err != nil {
 		return nil, fmt.Errorf("could not list relations for ID %s: %v", relationID, err)
 	}
@@ -206,11 +190,7 @@ func (i *IntegrationRequirer) GetProviderCertificate() ([]*ProviderCertificate, 
 		return nil, fmt.Errorf("no relations found for ID %s", relationID)
 	}
 
-	relationData, err := i.HookContext.Commands.RelationGet(&commands.RelationGetOptions{
-		ID:     relationID,
-		UnitID: relations[0],
-		App:    true,
-	})
+	relationData, err := goops.GetAppRelationData(relationID, relations[0])
 	if err != nil {
 		return nil, fmt.Errorf("could not get relation data: %w", err)
 	}
@@ -235,10 +215,7 @@ func (i *IntegrationRequirer) GetProviderCertificate() ([]*ProviderCertificate, 
 }
 
 func (i *IntegrationRequirer) GetPrivateKey() (string, error) {
-	secret, err := i.HookContext.Commands.SecretGet(&commands.SecretGetOptions{
-		Label:   PrivateKeySecretLabel,
-		Refresh: true,
-	})
+	secret, err := goops.GetSecretByLabel(PrivateKeySecretLabel, false, true)
 	if err != nil {
 		return "", fmt.Errorf("cCould not get private key secret: %v", err)
 	}
@@ -251,23 +228,20 @@ func (i *IntegrationRequirer) GetPrivateKey() (string, error) {
 }
 
 func (i *IntegrationRequirer) getOrGeneratePrivateKey() (string, error) {
-	secret, _ := i.HookContext.Commands.SecretGet(&commands.SecretGetOptions{
-		Label:   PrivateKeySecretLabel,
-		Refresh: true,
-	})
+	secret, _ := goops.GetSecretByLabel(PrivateKeySecretLabel, false, true)
 
 	if secret != nil {
 		return secret["private-key"], nil
 	}
 
-	i.HookContext.Commands.JujuLog(commands.Warning, "Secret is empty")
+	goops.LogWarningf("Secret is empty")
 
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate private key: %w", err)
 	}
 
-	i.HookContext.Commands.JujuLog(commands.Warning, "Generated new private key")
+	goops.LogWarningf("Generated new private key")
 
 	keyBuf := &bytes.Buffer{}
 	privBytes := x509.MarshalPKCS1PrivateKey(priv)
@@ -277,14 +251,14 @@ func (i *IntegrationRequirer) getOrGeneratePrivateKey() (string, error) {
 		return "", fmt.Errorf("failed to PEM‐encode private key: %w", err)
 	}
 
-	secretAddOpts := &commands.SecretAddOptions{
+	secretAddOpts := &goops.AddSecretOptions{
 		Label: PrivateKeySecretLabel,
 		Content: map[string]string{
 			"private-key": keyBuf.String(),
 		},
 	}
 
-	_, err = i.HookContext.Commands.SecretAdd(secretAddOpts)
+	_, err = goops.AddSecret(secretAddOpts)
 	if err != nil {
 		return "", fmt.Errorf("could not add secret: %w", err)
 	}

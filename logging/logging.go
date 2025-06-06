@@ -6,21 +6,17 @@ import (
 
 	"github.com/canonical/pebble/client"
 	"github.com/gruyaume/goops"
-	"github.com/gruyaume/goops/commands"
 	"gopkg.in/yaml.v3"
 )
 
 type Integration struct {
-	HookContext   *goops.HookContext
 	PebbleClient  *client.Client
 	RelationName  string
 	ContainerName string
 }
 
 func (i *Integration) GetRelationID() (string, error) {
-	relationIDs, err := i.HookContext.Commands.RelationIDs(&commands.RelationIDsOptions{
-		Name: i.RelationName,
-	})
+	relationIDs, err := goops.GetRelationIDs(i.RelationName)
 	if err != nil {
 		return "", fmt.Errorf("could not get relation IDs: %w", err)
 	}
@@ -42,9 +38,7 @@ func (i *Integration) GetEndpoint() (string, error) {
 		return "", err
 	}
 
-	relations, err := i.HookContext.Commands.RelationList(&commands.RelationListOptions{
-		ID: relationID,
-	})
+	relations, err := goops.ListRelations(relationID)
 	if err != nil {
 		return "", err
 	}
@@ -53,13 +47,9 @@ func (i *Integration) GetEndpoint() (string, error) {
 		return "", fmt.Errorf("no relations found for ID: %s", relationID)
 	}
 
-	relationData, err := i.HookContext.Commands.RelationGet(&commands.RelationGetOptions{
-		ID:     relationID,
-		UnitID: relations[0],
-		App:    false,
-	})
+	relationData, err := goops.GetUnitRelationData(relationID, relations[0])
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Debug, "Could not get relation data:", err.Error())
+		goops.LogDebugf("Could not get relation data: %v", err.Error())
 		return "", err
 	}
 
@@ -99,17 +89,19 @@ type PebbleLayer struct {
 }
 
 func (i *Integration) getLabels() (map[string]string, error) {
-	unitName := i.HookContext.Environment.JujuUnitName()
+	env := goops.ReadEnv()
 
-	modelName := i.HookContext.Environment.JujuModelName()
-	modelUUID := i.HookContext.Environment.JujuModelUUID()
+	meta, err := goops.ReadMetadata()
+	if err != nil {
+		return nil, fmt.Errorf("could not read metadata: %w", err)
+	}
 
 	labels := map[string]string{
 		"product":         "Juju",
-		"charm":           i.HookContext.Metadata.Name,
-		"juju_model":      modelName,
-		"juju_model_uuid": modelUUID,
-		"juju_unit":       unitName,
+		"charm":           meta.Name,
+		"juju_model":      env.ModelName,
+		"juju_model_uuid": env.ModelUUID,
+		"juju_unit":       env.UnitName,
 	}
 
 	return labels, nil
@@ -118,21 +110,21 @@ func (i *Integration) getLabels() (map[string]string, error) {
 func (i *Integration) EnableEndpoints() error {
 	lokiEndpoint, err := i.GetEndpoint()
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Debug, "Could not get endpoint:", err.Error())
+		goops.LogDebugf("Could not get endpoint: %s", err.Error())
 		return err
 	}
 
 	labels, err := i.getLabels()
 	if err != nil {
-		i.HookContext.Commands.JujuLog(commands.Debug, "Could not get labels:", err.Error())
+		goops.LogDebugf("Could not get labels: %s", err.Error())
 		return err
 	}
 
-	unitName := i.HookContext.Environment.JujuUnitName()
+	env := goops.ReadEnv()
 
 	layerData, err := yaml.Marshal(PebbleLayer{
 		LogTargets: map[string]LogTarget{
-			unitName: {
+			env.UnitName: {
 				Override: "replace",
 				Services: []string{"all"},
 				Type:     "loki",
@@ -154,7 +146,6 @@ func (i *Integration) EnableEndpoints() error {
 		return fmt.Errorf("could not add pebble layer: %w", err)
 	}
 
-	i.HookContext.Commands.JujuLog(commands.Debug, "Pebble layer added successfully")
-
+	goops.LogDebugf("Pebble layer added successfully")
 	return nil
 }

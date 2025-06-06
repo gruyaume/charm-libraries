@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/gruyaume/goops"
-	"github.com/gruyaume/goops/commands"
 )
 
 type TLSConfig struct {
@@ -33,31 +32,25 @@ type ScrapeMetadata struct {
 }
 
 type Integration struct {
-	HookContext  *goops.HookContext
 	RelationName string
 	Jobs         []*Job
 	CharmName    string
 }
 
 func (i *Integration) GetScrapeMetadata() (*ScrapeMetadata, error) {
-	modelName := i.HookContext.Environment.JujuModelName()
-	modelUUID := i.HookContext.Environment.JujuModelUUID()
-	unitName := i.HookContext.Environment.JujuUnitName()
-	appName := strings.Split(unitName, "/")[0]
+	env := goops.ReadEnv()
 
 	return &ScrapeMetadata{
-		Model:       modelName,
-		ModelUUID:   modelUUID,
-		Application: appName,
-		Unit:        unitName,
+		Model:       env.ModelName,
+		ModelUUID:   env.ModelUUID,
+		Application: strings.Split(env.UnitName, "/")[0],
+		Unit:        env.UnitName,
 		CharmName:   i.CharmName,
 	}, nil
 }
 
 func (i *Integration) Write() error {
-	relationIDs, err := i.HookContext.Commands.RelationIDs(&commands.RelationIDsOptions{
-		Name: i.RelationName,
-	})
+	relationIDs, err := goops.GetRelationIDs(i.RelationName)
 	if err != nil {
 		return fmt.Errorf("could not get relation IDs: %w", err)
 	}
@@ -86,13 +79,7 @@ func (i *Integration) Write() error {
 		"scrape_metadata": string(scrapeMetadataBytes),
 	}
 
-	relationSetOpts := &commands.RelationSetOptions{
-		ID:   relationIDs[0],
-		App:  true,
-		Data: relationData,
-	}
-
-	err = i.HookContext.Commands.RelationSet(relationSetOpts)
+	err = goops.SetAppRelationData(relationIDs[0], relationData)
 	if err != nil {
 		return fmt.Errorf("could not set relation data: %w", err)
 	}
