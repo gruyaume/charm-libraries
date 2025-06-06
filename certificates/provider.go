@@ -7,11 +7,9 @@ import (
 	"fmt"
 
 	"github.com/gruyaume/goops"
-	"github.com/gruyaume/goops/commands"
 )
 
 type IntegrationProvider struct {
-	HookContext  *goops.HookContext
 	RelationName string
 }
 
@@ -73,11 +71,7 @@ func (p *IntegrationProvider) GetOutstandingCertificateRequests() ([]RequirerCer
 		return nil, fmt.Errorf("relation name is empty")
 	}
 
-	relationIDsOpts := &commands.RelationIDsOptions{
-		Name: p.RelationName,
-	}
-
-	relationIDs, err := p.HookContext.Commands.RelationIDs(relationIDsOpts)
+	relationIDs, err := goops.GetRelationIDs(p.RelationName)
 	if err != nil {
 		return nil, fmt.Errorf("could not get relation IDs: %w", err)
 	}
@@ -85,22 +79,13 @@ func (p *IntegrationProvider) GetOutstandingCertificateRequests() ([]RequirerCer
 	requirerCertificateRequests := make([]RequirerCertificateRequest, 0)
 
 	for _, relationID := range relationIDs {
-		relationListOpts := &commands.RelationListOptions{
-			ID: relationID,
-		}
-
-		relationUnits, err := p.HookContext.Commands.RelationList(relationListOpts)
+		relationUnits, err := goops.ListRelations(relationID)
 		if err != nil {
 			return nil, fmt.Errorf("could not list relation data: %w", err)
 		}
 
 		for _, unitID := range relationUnits {
-			relationGetOpts := &commands.RelationGetOptions{
-				ID:     relationID,
-				UnitID: unitID,
-			}
-
-			relationData, err := p.HookContext.Commands.RelationGet(relationGetOpts)
+			relationData, err := goops.GetUnitRelationData(relationID, unitID)
 			if err != nil {
 				return nil, fmt.Errorf("could not get relation data: %w", err)
 			}
@@ -142,7 +127,7 @@ func (p *IntegrationProvider) GetOutstandingCertificateRequests() ([]RequirerCer
 func (p *IntegrationProvider) AlreadyProvided(relationID string, csr string) bool {
 	issued, err := p.GetIssuedCertificates(relationID)
 	if err != nil {
-		p.HookContext.Commands.JujuLog(commands.Warning, "Could not get issued certificates", err.Error())
+		goops.LogWarningf("Could not get issued certificates: %v", err)
 		return false
 	}
 
@@ -184,13 +169,7 @@ func (p *IntegrationProvider) SetRelationCertificate(opts *SetRelationCertificat
 		"certificates": string(appDataJSON),
 	}
 
-	relationSetOpts := &commands.RelationSetOptions{
-		ID:   opts.RelationID,
-		App:  true,
-		Data: relationData,
-	}
-
-	err = p.HookContext.Commands.RelationSet(relationSetOpts)
+	err = goops.SetAppRelationData(opts.RelationID, relationData)
 	if err != nil {
 		return fmt.Errorf("could not set relation data: %w", err)
 	}
@@ -264,13 +243,9 @@ func loadCertificateSigningRequest(pemString string) (CertificateSigningRequest,
 }
 
 func (p *IntegrationProvider) GetIssuedCertificates(relationID string) ([]*ProviderCertificate, error) {
-	unitName := p.HookContext.Environment.JujuUnitName()
+	env := goops.ReadEnv()
 
-	relationData, err := p.HookContext.Commands.RelationGet(&commands.RelationGetOptions{
-		ID:     relationID,
-		UnitID: unitName,
-		App:    true,
-	})
+	relationData, err := goops.GetAppRelationData(relationID, env.UnitName)
 	if err != nil {
 		return nil, fmt.Errorf("could not get relation data: %w", err)
 	}
