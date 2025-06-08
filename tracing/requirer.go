@@ -129,7 +129,7 @@ func (i *Integration) GetEndpoint() string {
 		return ""
 	}
 
-	relations, err := goops.ListRelations(relationID)
+	relations, err := goops.ListRelationUnits(relationID)
 	if err != nil {
 		goops.LogDebugf("Could not get relation list: %s", err.Error())
 		return ""

@@ -181,9 +181,9 @@ func (i *IntegrationRequirer) GetProviderCertificate() ([]*ProviderCertificate, 
 		return nil, fmt.Errorf("could not get relation ID: %v", err)
 	}
 
-	relations, err := goops.ListRelations(relationID)
+	relations, err := goops.ListRelationUnits(relationID)
 	if err != nil {
-		return nil, fmt.Errorf("could not list relations for ID %s: %v", relationID, err)
+		return nil, fmt.Errorf("could not list relation units for ID %s: %v", relationID, err)
 	}
 
 	if len(relations) == 0 {

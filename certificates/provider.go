@@ -79,9 +79,9 @@ func (p *IntegrationProvider) GetOutstandingCertificateRequests() ([]RequirerCer
 	requirerCertificateRequests := make([]RequirerCertificateRequest, 0)
 
 	for _, relationID := range relationIDs {
-		relationUnits, err := goops.ListRelations(relationID)
+		relationUnits, err := goops.ListRelationUnits(relationID)
 		if err != nil {
-			return nil, fmt.Errorf("could not list relation data: %w", err)
+			return nil, fmt.Errorf("could not list relation units: %w", err)
 		}
 
 		for _, unitID := range relationUnits {
