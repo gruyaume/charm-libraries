@@ -1,0 +1,76 @@
+package prometheus_test
+
+import (
+	"testing"
+
+	"github.com/gruyaume/charm-libraries/prometheus"
+	"github.com/gruyaume/goops/goopstest"
+)
+
+func WriteExampleUse() error {
+	integration := &prometheus.Integration{
+		RelationName: "metrics",
+		CharmName:    "my-charm",
+		Jobs: []*prometheus.Job{
+			{
+				Scheme:      "https",
+				TLSConfig:   prometheus.TLSConfig{InsecureSkipVerify: true},
+				MetricsPath: "/metrics",
+				StaticConfigs: []prometheus.StaticConfig{
+					{
+						Targets: []string{"localhost:8080"},
+					},
+				},
+			},
+		},
+	}
+
+	err := integration.Write()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func TestWriteExampleUse(t *testing.T) {
+	ctx := goopstest.Context{
+		Charm: WriteExampleUse,
+	}
+
+	prometheusRelation := &goopstest.Relation{
+		Endpoint:     "metrics",
+		LocalAppData: goopstest.DataBag{},
+	}
+
+	stateIn := &goopstest.State{
+		Relations: []*goopstest.Relation{
+			prometheusRelation,
+		},
+	}
+
+	stateOut, err := ctx.Run("start", stateIn)
+	if err != nil {
+		t.Fatalf("failed to run charm: %v", err)
+	}
+
+	if len(stateOut.Relations) != 1 {
+		t.Fatalf("expected 1 relation, got %d", len(stateOut.Relations))
+	}
+
+	if stateOut.Relations[0].Endpoint != "metrics" {
+		t.Fatalf("expected relation endpoint 'metrics', got '%s'", stateOut.Relations[0].Endpoint)
+	}
+
+	if len(stateOut.Relations[0].LocalAppData) != 2 {
+		t.Fatalf("expected 2 local app data, got %d", len(stateOut.Relations[0].LocalAppData))
+	}
+
+	if scrapeJobs, ok := stateOut.Relations[0].LocalAppData["scrape_jobs"]; !ok || scrapeJobs != `[{"scheme":"https","tls_config":{"insecure_skip_verify":true},"metrics_path":"/metrics","static_configs":[{"targets":["localhost:8080"]}]}]` {
+		t.Fatalf("expected scrape_jobs to be set, got %s", scrapeJobs)
+	}
+
+	if scrapeMetadata, ok := stateOut.Relations[0].LocalAppData["scrape_metadata"]; !ok || scrapeMetadata != `{"model":"","model_uuid":"","application":"","unit":"","charm_name":"my-charm"}` {
+		t.Fatalf("expected scrape_metadata to be set, got %s", scrapeMetadata)
+	}
+}

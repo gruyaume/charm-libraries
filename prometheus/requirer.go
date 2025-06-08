@@ -81,7 +81,7 @@ func (i *Integration) Write() error {
 
 	err = goops.SetAppRelationData(relationIDs[0], relationData)
 	if err != nil {
-		return fmt.Errorf("could not set relation data: %w", err)
+		return fmt.Errorf("could not set app relation data: %w", err)
 	}
 
 	return nil

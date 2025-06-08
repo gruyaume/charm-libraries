@@ -38,7 +38,7 @@ func (i *Integration) GetEndpoint() (string, error) {
 		return "", err
 	}
 
-	relations, err := goops.ListRelations(relationID)
+	relations, err := goops.ListRelationUnits(relationID)
 	if err != nil {
 		return "", err
 	}
@@ -52,6 +52,8 @@ func (i *Integration) GetEndpoint() (string, error) {
 		goops.LogDebugf("Could not get relation data: %v", err.Error())
 		return "", err
 	}
+
+	fmt.Println("Relation Data:", relationData)
 
 	endpointStr := relationData["endpoint"]
 	if endpointStr == "" {
