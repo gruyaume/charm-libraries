@@ -2,6 +2,7 @@ package tracing_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/gruyaume/charm-libraries/tracing"
@@ -16,6 +17,21 @@ func PublishSupportedProtocolsExampleUse() error {
 
 	protocols := []tracing.Protocol{tracing.GRPC, tracing.HTTP}
 	integration.PublishSupportedProtocols(protocols)
+
+	return nil
+}
+
+func GetEndpointExampleUse() error {
+	integration := &tracing.Integration{
+		RelationName: "tracing",
+		ServiceName:  "my-service",
+	}
+
+	endpoint := integration.GetEndpoint()
+
+	if endpoint != "https://tracing.example.com" {
+		return fmt.Errorf("expected endpoint 'https://tracing.example.com', got '%s'", endpoint)
+	}
 
 	return nil
 }
@@ -69,4 +85,30 @@ func TestPublishSupportedProtocols(t *testing.T) {
 		t.Fatalf("expected one of the protocols to be 'otlp_grpc' or 'otlp_http', got '%s'", supportedProtocols[1])
 	}
 
+}
+
+func TestGetEndpoint(t *testing.T) {
+	ctx := goopstest.Context{
+		Charm:   GetEndpointExampleUse,
+		AppName: "requirer",
+		UnitID:  0,
+	}
+
+	tracingRelation := &goopstest.Relation{
+		Endpoint: "tracing",
+		RemoteAppData: goopstest.DataBag{
+			"receivers": `[{"url": "https://tracing.example.com", "protocol": {"name": "otlp_grpc", "type": "receiver"}}]`,
+		},
+	}
+
+	stateIn := &goopstest.State{
+		Relations: []*goopstest.Relation{
+			tracingRelation,
+		},
+	}
+
+	_, err := ctx.Run("start", stateIn)
+	if err != nil {
+		t.Fatalf("failed to run charm: %v", err)
+	}
 }

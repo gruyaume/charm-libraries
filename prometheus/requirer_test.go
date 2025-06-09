@@ -1,6 +1,7 @@
 package prometheus_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gruyaume/charm-libraries/prometheus"
@@ -33,9 +34,41 @@ func WriteExampleUse() error {
 	return nil
 }
 
+func GetScrapeMetadataExampleUse() error {
+	integration := &prometheus.Integration{
+		RelationName: "metrics",
+		CharmName:    "my-charm",
+	}
+
+	scrapeMetadata, err := integration.GetScrapeMetadata()
+	if err != nil {
+		return err
+	}
+
+	expectedMetadata := &prometheus.ScrapeMetadata{
+		Model:       "test-model",
+		ModelUUID:   "12345",
+		Application: "my-charm",
+		Unit:        "my-charm/0",
+		CharmName:   "my-charm",
+	}
+
+	if scrapeMetadata.Model != expectedMetadata.Model ||
+		scrapeMetadata.ModelUUID != expectedMetadata.ModelUUID ||
+		scrapeMetadata.Application != expectedMetadata.Application ||
+		scrapeMetadata.Unit != expectedMetadata.Unit ||
+		scrapeMetadata.CharmName != expectedMetadata.CharmName {
+		return fmt.Errorf("scrape metadata does not match expected values")
+	}
+
+	return nil
+}
+
 func TestWriteExampleUse(t *testing.T) {
 	ctx := goopstest.Context{
-		Charm: WriteExampleUse,
+		Charm:   WriteExampleUse,
+		AppName: "my-charm",
+		UnitID:  0,
 	}
 
 	prometheusRelation := &goopstest.Relation{
@@ -46,6 +79,10 @@ func TestWriteExampleUse(t *testing.T) {
 	stateIn := &goopstest.State{
 		Relations: []*goopstest.Relation{
 			prometheusRelation,
+		},
+		Model: &goopstest.Model{
+			Name: "test-model",
+			UUID: "12345",
 		},
 	}
 
@@ -70,7 +107,39 @@ func TestWriteExampleUse(t *testing.T) {
 		t.Fatalf("expected scrape_jobs to be set, got %s", scrapeJobs)
 	}
 
-	if scrapeMetadata, ok := stateOut.Relations[0].LocalAppData["scrape_metadata"]; !ok || scrapeMetadata != `{"model":"","model_uuid":"","application":"","unit":"","charm_name":"my-charm"}` {
+	if scrapeMetadata, ok := stateOut.Relations[0].LocalAppData["scrape_metadata"]; !ok || scrapeMetadata != `{"model":"test-model","model_uuid":"12345","application":"my-charm","unit":"my-charm/0","charm_name":"my-charm"}` {
 		t.Fatalf("expected scrape_metadata to be set, got %s", scrapeMetadata)
+	}
+}
+
+func TestGetScrapeMetadataExampleUse(t *testing.T) {
+	ctx := goopstest.Context{
+		Charm:   GetScrapeMetadataExampleUse,
+		AppName: "my-charm",
+		UnitID:  0,
+	}
+
+	prometheusRelation := &goopstest.Relation{
+		Endpoint:     "metrics",
+		LocalAppData: goopstest.DataBag{},
+	}
+
+	stateIn := &goopstest.State{
+		Relations: []*goopstest.Relation{
+			prometheusRelation,
+		},
+		Model: &goopstest.Model{
+			Name: "test-model",
+			UUID: "12345",
+		},
+	}
+
+	stateOut, err := ctx.Run("start", stateIn)
+	if err != nil {
+		t.Fatalf("failed to run charm: %v", err)
+	}
+
+	if len(stateOut.Relations) != 1 {
+		t.Fatalf("expected 1 relation, got %d", len(stateOut.Relations))
 	}
 }

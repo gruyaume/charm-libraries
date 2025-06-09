@@ -117,3 +117,150 @@ func TestGetOutstandingCertificateRequests(t *testing.T) {
 		t.Fatalf("Run returned an error: %v", err)
 	}
 }
+
+func GetIssuedCertificatesExampleUse() error {
+	ip := &certificates.IntegrationProvider{
+		RelationName: "certificates",
+	}
+
+	issuedCerts, err := ip.GetIssuedCertificates("certificates:0")
+	if err != nil {
+		return err
+	}
+
+	if len(issuedCerts) != 1 {
+		return fmt.Errorf("expected 1 issued certificate, got %d", len(issuedCerts))
+	}
+
+	if string(issuedCerts[0].Certificate) != "example-cert" {
+		return fmt.Errorf("expected certificate to be 'example-cert', got '%s'", issuedCerts[0].Certificate)
+	}
+
+	if issuedCerts[0].CertificateSigningRequest != "example-csr" {
+		return fmt.Errorf("expected certificate signing request to be 'example-csr', got '%s'", issuedCerts[0].CertificateSigningRequest)
+	}
+	if issuedCerts[0].CA != "test-ca" {
+		return fmt.Errorf("expected CA to be 'test-ca', got '%s'", issuedCerts[0].CA)
+	}
+
+	return nil
+}
+
+type ProviderCertificateRelationData struct {
+	CA                        string `json:"ca"`
+	Chain                     string `json:"chain"`
+	CertificateSigningRequest string `json:"certificate_signing_request"`
+	Certificate               string `json:"certificate"`
+}
+
+func TestGetIssuedCertificates(t *testing.T) {
+	ctx := goopstest.Context{
+		Charm:   GetIssuedCertificatesExampleUse,
+		AppName: "test-charm",
+		UnitID:  0,
+	}
+
+	providedCertificates := make([]ProviderCertificateRelationData, 0)
+
+	providedCertificates = append(providedCertificates, ProviderCertificateRelationData{
+		CA:                        "test-ca",
+		Chain:                     `["example-cert","test-ca"]`,
+		CertificateSigningRequest: "example-csr",
+		Certificate:               "example-cert",
+	})
+
+	relationData, err := json.Marshal(providedCertificates)
+	if err != nil {
+		t.Fatalf("Failed to marshal provided certificates: %v", err)
+	}
+
+	certificatesRelation := &goopstest.Relation{
+		Endpoint: "certificates",
+		LocalAppData: goopstest.DataBag{
+			"certificates": string(relationData),
+		},
+	}
+
+	stateIn := &goopstest.State{
+		Relations: []*goopstest.Relation{
+			certificatesRelation,
+		},
+	}
+
+	stateOut, err := ctx.Run("start", stateIn)
+	if err != nil {
+		t.Fatalf("Run returned an error: %v", err)
+	}
+
+	if len(stateOut.Relations) != 1 {
+		t.Fatalf("expected 1 relation, got %d", len(stateOut.Relations))
+	}
+}
+
+func SetRelationCertificateExampleUse() error {
+	ip := &certificates.IntegrationProvider{
+		RelationName: "certificates",
+	}
+
+	opts := &certificates.SetRelationCertificateOptions{
+		RelationID:                "certificates:0",
+		CA:                        "test-ca",
+		Chain:                     []string{"example-cert", "test-ca"},
+		CertificateSigningRequest: "example-csr",
+		Certificate:               "example-cert",
+	}
+
+	err := ip.SetRelationCertificate(opts)
+	if err != nil {
+		return fmt.Errorf("failed to set relation certificate: %w", err)
+	}
+
+	return nil
+}
+
+func TestSetRelationCertificate(t *testing.T) {
+	ctx := goopstest.Context{
+		Charm: SetRelationCertificateExampleUse,
+	}
+
+	certificatesRelation := &goopstest.Relation{
+		Endpoint: "certificates",
+		LocalAppData: goopstest.DataBag{
+			"certificates": `[]`,
+		},
+	}
+
+	stateIn := &goopstest.State{
+		Relations: []*goopstest.Relation{
+			certificatesRelation,
+		},
+	}
+
+	stateOut, err := ctx.Run("start", stateIn)
+	if err != nil {
+		t.Fatalf("Run returned an error: %v", err)
+	}
+
+	if len(stateOut.Relations) != 1 {
+		t.Fatalf("expected 1 relation, got %d", len(stateOut.Relations))
+	}
+
+	relationData, ok := stateOut.Relations[0].LocalAppData["certificates"]
+	if !ok {
+		t.Fatal("expected 'certificates' key in relation data")
+	}
+
+	var certs []certificates.CertificateSigningRequestProviderAppRelationData
+	err = json.Unmarshal([]byte(relationData), &certs)
+	if err != nil {
+		t.Fatalf("failed to unmarshal relation data: %v", err)
+	}
+
+	if len(certs) != 1 {
+		t.Fatalf("expected 1 certificate, got %d", len(certs))
+	}
+
+	if certs[0].CA != "test-ca" || certs[0].CertificateSigningRequest != "example-csr" || certs[0].Certificate != "example-cert" {
+		t.Fatalf("certificate data does not match expected values")
+	}
+}
