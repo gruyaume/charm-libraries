@@ -53,8 +53,6 @@ func (i *Integration) GetEndpoint() (string, error) {
 		return "", err
 	}
 
-	fmt.Println("Relation Data:", relationData)
-
 	endpointStr := relationData["endpoint"]
 	if endpointStr == "" {
 		return "", fmt.Errorf("no endpoint found in relation data")
