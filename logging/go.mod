@@ -3,13 +3,13 @@ module github.com/gruyaume/charm-libraries/logging
 go 1.24.0
 
 require (
-	github.com/canonical/pebble v1.21.0
-	github.com/gruyaume/goops v0.0.19
+	github.com/canonical/pebble v1.22.2
+	github.com/gruyaume/goops v0.0.20-0.20250616211617-e5cf3bc9226f
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/gorilla/websocket v1.5.1 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
+	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
 )

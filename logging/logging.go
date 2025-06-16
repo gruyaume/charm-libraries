@@ -10,7 +10,7 @@ import (
 )
 
 type Integration struct {
-	PebbleClient  *client.Client
+	PebbleClient  goops.PebbleClient
 	RelationName  string
 	ContainerName string
 }
