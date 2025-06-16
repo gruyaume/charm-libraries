@@ -1,5 +1,5 @@
-github.com/gruyaume/goops v0.0.17 h1:/uCruIDGHRzyiexeivLZrQ0hZRdkadVpDD7InDfP6Ds=
-github.com/gruyaume/goops v0.0.17/go.mod h1:91Pt2hUN92i9M74tYVJ1ASmCXV+5UtAnMGKlQmz/21g=
+github.com/gruyaume/goops v0.0.19 h1:aCAd5XSztgTo9+RglHXZY8El3DortleL9cJDfjVGpNc=
+github.com/gruyaume/goops v0.0.19/go.mod h1:91Pt2hUN92i9M74tYVJ1ASmCXV+5UtAnMGKlQmz/21g=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
