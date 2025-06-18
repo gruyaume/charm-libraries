@@ -12,6 +12,10 @@ github.com/gruyaume/goops v0.0.20-0.20250616210414-55af8ca0c3fa h1:M2MwLl5nRjPdC
 github.com/gruyaume/goops v0.0.20-0.20250616210414-55af8ca0c3fa/go.mod h1:mLOsaUCP8Tr/t3aLvgDsOqvqjn0jDZ9jyc8iFKEdCls=
 github.com/gruyaume/goops v0.0.20-0.20250616211617-e5cf3bc9226f h1:DORrtQZPRAIb39xReoV4/1Iiw2j/OALk1BmqllNwQGE=
 github.com/gruyaume/goops v0.0.20-0.20250616211617-e5cf3bc9226f/go.mod h1:mLOsaUCP8Tr/t3aLvgDsOqvqjn0jDZ9jyc8iFKEdCls=
+github.com/gruyaume/goops v0.0.20-0.20250618012730-f45a4c41a2a9 h1:tZI8Q19GCwQpxgrkP/prounslv4zyUe/R4VVHCCMaoE=
+github.com/gruyaume/goops v0.0.20-0.20250618012730-f45a4c41a2a9/go.mod h1:mLOsaUCP8Tr/t3aLvgDsOqvqjn0jDZ9jyc8iFKEdCls=
+github.com/gruyaume/goops v0.0.20-0.20250618015442-e72c6c34cbfb h1:UhZkm4YJXkjn9a+Szc1qy+bWXK99Vv0sGtpRNgyuCV8=
+github.com/gruyaume/goops v0.0.20-0.20250618015442-e72c6c34cbfb/go.mod h1:mLOsaUCP8Tr/t3aLvgDsOqvqjn0jDZ9jyc8iFKEdCls=
 github.com/kr/pretty v0.2.1 h1:Fmg33tUaq4/8ym9TJN1x7sLJnHVwhP33CNkpYV/7rwI=
 github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=

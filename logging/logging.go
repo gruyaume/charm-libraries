@@ -108,6 +108,10 @@ func (i *Integration) getLabels() (map[string]string, error) {
 }
 
 func (i *Integration) EnableEndpoints() error {
+	if i.PebbleClient == nil {
+		return fmt.Errorf("pebble client is not set")
+	}
+
 	lokiEndpoint, err := i.GetEndpoint()
 	if err != nil {
 		goops.LogDebugf("Could not get endpoint: %s", err.Error())
