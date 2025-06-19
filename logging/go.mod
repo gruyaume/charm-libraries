@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/canonical/pebble v1.22.2
-	github.com/gruyaume/goops v0.0.20-0.20250618015442-e72c6c34cbfb
+	github.com/gruyaume/goops v0.0.20
 	gopkg.in/yaml.v3 v3.0.1
 )
 

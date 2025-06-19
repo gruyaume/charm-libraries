@@ -131,8 +131,6 @@ func TestAddPebbleLayer(t *testing.T) {
 		t.Fatalf("expected 1 log target, got %d", len(layer.LogTargets))
 	}
 
-	fmt.Println("Log targets:", layer.LogTargets)
-
 	logTarget, exists := layer.LogTargets["my-app/0"]
 	if !exists {
 		t.Fatal("expected layer to have 'my-app/0' log target, but it does not exist")
