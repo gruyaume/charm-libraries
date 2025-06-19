@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/gruyaume/charm-libraries/logging"
-	"github.com/gruyaume/goops"
 	"github.com/gruyaume/goops/goopstest"
 )
 
@@ -53,10 +52,8 @@ func TestGetEndpoint(t *testing.T) {
 }
 
 func EnableEndpointsExampleUse() error {
-	client := goops.Pebble("my-container")
 	integration := &logging.Integration{
 		RelationName:  "logging",
-		PebbleClient:  client,
 		ContainerName: "my-container",
 	}
 
