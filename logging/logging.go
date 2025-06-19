@@ -10,7 +10,6 @@ import (
 )
 
 type Integration struct {
-	PebbleClient  *client.Client
 	RelationName  string
 	ContainerName string
 }
@@ -108,6 +107,8 @@ func (i *Integration) getLabels() (map[string]string, error) {
 }
 
 func (i *Integration) EnableEndpoints() error {
+	pebble := goops.Pebble(i.ContainerName)
+
 	lokiEndpoint, err := i.GetEndpoint()
 	if err != nil {
 		goops.LogDebugf("Could not get endpoint: %s", err.Error())
@@ -137,7 +138,7 @@ func (i *Integration) EnableEndpoints() error {
 		return fmt.Errorf("could not marshal layer data to YAML: %w", err)
 	}
 
-	err = i.PebbleClient.AddLayer(&client.AddLayerOptions{
+	err = pebble.AddLayer(&client.AddLayerOptions{
 		Combine:   true,
 		Label:     i.ContainerName + "-log-forwarding",
 		LayerData: layerData,
