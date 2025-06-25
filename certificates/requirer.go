@@ -252,6 +252,7 @@ func (i *IntegrationRequirer) getOrGeneratePrivateKey() (string, error) {
 	}
 
 	secretAddOpts := &goops.AddSecretOptions{
+		Owner: goops.OwnerUnit,
 		Label: PrivateKeySecretLabel,
 		Content: map[string]string{
 			"private-key": keyBuf.String(),

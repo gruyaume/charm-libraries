@@ -149,6 +149,15 @@ type SetRelationCertificateOptions struct {
 }
 
 func (p *IntegrationProvider) SetRelationCertificate(opts *SetRelationCertificateOptions) error {
+	isLeader, err := goops.IsLeader()
+	if err != nil {
+		return fmt.Errorf("could not determine if unit is leader: %w", err)
+	}
+
+	if !isLeader {
+		return fmt.Errorf("unit is not the leader and cannot set app relation data")
+	}
+
 	appData := []CertificateSigningRequestProviderAppRelationData{
 		{
 			CA:                        opts.CA,

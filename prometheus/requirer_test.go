@@ -68,19 +68,20 @@ func TestWriteExampleUse(t *testing.T) {
 	ctx := goopstest.Context{
 		Charm:   WriteExampleUse,
 		AppName: "my-charm",
-		UnitID:  0,
+		UnitID:  "my-charm/0",
 	}
 
-	prometheusRelation := &goopstest.Relation{
+	prometheusRelation := goopstest.Relation{
 		Endpoint:     "metrics",
 		LocalAppData: goopstest.DataBag{},
 	}
 
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Leader: true,
+		Relations: []goopstest.Relation{
 			prometheusRelation,
 		},
-		Model: &goopstest.Model{
+		Model: goopstest.Model{
 			Name: "test-model",
 			UUID: "12345",
 		},
@@ -89,6 +90,10 @@ func TestWriteExampleUse(t *testing.T) {
 	stateOut, err := ctx.Run("start", stateIn)
 	if err != nil {
 		t.Fatalf("failed to run charm: %v", err)
+	}
+
+	if ctx.CharmErr != nil {
+		t.Fatalf("charm error: %v", ctx.CharmErr)
 	}
 
 	if len(stateOut.Relations) != 1 {
@@ -116,19 +121,19 @@ func TestGetScrapeMetadataExampleUse(t *testing.T) {
 	ctx := goopstest.Context{
 		Charm:   GetScrapeMetadataExampleUse,
 		AppName: "my-charm",
-		UnitID:  0,
+		UnitID:  "my-charm/0",
 	}
 
-	prometheusRelation := &goopstest.Relation{
+	prometheusRelation := goopstest.Relation{
 		Endpoint:     "metrics",
 		LocalAppData: goopstest.DataBag{},
 	}
 
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Relations: []goopstest.Relation{
 			prometheusRelation,
 		},
-		Model: &goopstest.Model{
+		Model: goopstest.Model{
 			Name: "test-model",
 			UUID: "12345",
 		},
