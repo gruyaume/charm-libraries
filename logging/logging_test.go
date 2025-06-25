@@ -30,7 +30,7 @@ func TestGetEndpoint(t *testing.T) {
 		Charm: GetEndpointExampleUse,
 	}
 
-	loggingRelation := &goopstest.Relation{
+	loggingRelation := goopstest.Relation{
 		Endpoint: "logging",
 		RemoteUnitsData: map[goopstest.UnitID]goopstest.DataBag{
 			"provider/0": {
@@ -39,8 +39,8 @@ func TestGetEndpoint(t *testing.T) {
 		},
 	}
 
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Relations: []goopstest.Relation{
 			loggingRelation,
 		},
 	}
@@ -69,11 +69,12 @@ func TestAddPebbleLayer(t *testing.T) {
 	ctx := goopstest.Context{
 		Charm:   EnableEndpointsExampleUse,
 		AppName: "my-app",
-		UnitID:  0,
+		UnitID:  "my-app/0",
 	}
 
-	loggingRelation := &goopstest.Relation{
-		Endpoint: "logging",
+	loggingRelation := goopstest.Relation{
+		Endpoint:      "logging",
+		RemoteAppName: "provider",
 		RemoteUnitsData: map[goopstest.UnitID]goopstest.DataBag{
 			"provider/0": {
 				"endpoint": `{"url": "https://logging.example.com"}`,
@@ -81,17 +82,17 @@ func TestAddPebbleLayer(t *testing.T) {
 		},
 	}
 
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Relations: []goopstest.Relation{
 			loggingRelation,
 		},
-		Containers: []*goopstest.Container{
+		Containers: []goopstest.Container{
 			{
 				Name:       "my-container",
 				CanConnect: true,
 			},
 		},
-		Model: &goopstest.Model{
+		Model: goopstest.Model{
 			Name: "whatever-model",
 			UUID: "whatever-model-uuid",
 		},
@@ -100,6 +101,10 @@ func TestAddPebbleLayer(t *testing.T) {
 	stateOut, err := ctx.Run("start", stateIn)
 	if err != nil {
 		t.Fatalf("failed to run charm: %v", err)
+	}
+
+	if ctx.CharmErr != nil {
+		t.Fatalf("charm error: %v", ctx.CharmErr)
 	}
 
 	if len(stateOut.Containers) != 1 {

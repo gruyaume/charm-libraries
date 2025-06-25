@@ -97,7 +97,7 @@ func TestGetOutstandingCertificateRequests(t *testing.T) {
 		t.Fatalf("Failed to marshal request data: %v", err)
 	}
 
-	certificatesRelation := &goopstest.Relation{
+	certificatesRelation := goopstest.Relation{
 		Endpoint: "certificates",
 		RemoteUnitsData: map[goopstest.UnitID]goopstest.DataBag{
 			"requirer/0": {
@@ -106,8 +106,8 @@ func TestGetOutstandingCertificateRequests(t *testing.T) {
 		},
 	}
 
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Relations: []goopstest.Relation{
 			certificatesRelation,
 		},
 	}
@@ -157,7 +157,7 @@ func TestGetIssuedCertificates(t *testing.T) {
 	ctx := goopstest.Context{
 		Charm:   GetIssuedCertificatesExampleUse,
 		AppName: "test-charm",
-		UnitID:  0,
+		UnitID:  "test-charm/0",
 	}
 
 	providedCertificates := make([]ProviderCertificateRelationData, 0)
@@ -174,15 +174,15 @@ func TestGetIssuedCertificates(t *testing.T) {
 		t.Fatalf("Failed to marshal provided certificates: %v", err)
 	}
 
-	certificatesRelation := &goopstest.Relation{
+	certificatesRelation := goopstest.Relation{
 		Endpoint: "certificates",
 		LocalAppData: goopstest.DataBag{
 			"certificates": string(relationData),
 		},
 	}
 
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Relations: []goopstest.Relation{
 			certificatesRelation,
 		},
 	}
@@ -223,15 +223,16 @@ func TestSetRelationCertificate(t *testing.T) {
 		Charm: SetRelationCertificateExampleUse,
 	}
 
-	certificatesRelation := &goopstest.Relation{
+	certificatesRelation := goopstest.Relation{
 		Endpoint: "certificates",
 		LocalAppData: goopstest.DataBag{
 			"certificates": `[]`,
 		},
 	}
 
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Leader: true,
+		Relations: []goopstest.Relation{
 			certificatesRelation,
 		},
 	}
@@ -239,6 +240,10 @@ func TestSetRelationCertificate(t *testing.T) {
 	stateOut, err := ctx.Run("start", stateIn)
 	if err != nil {
 		t.Fatalf("Run returned an error: %v", err)
+	}
+
+	if ctx.CharmErr != nil {
+		t.Fatalf("charm error: %v", ctx.CharmErr)
 	}
 
 	if len(stateOut.Relations) != 1 {

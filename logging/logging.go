@@ -48,8 +48,7 @@ func (i *Integration) GetEndpoint() (string, error) {
 
 	relationData, err := goops.GetUnitRelationData(relationID, relations[0])
 	if err != nil {
-		goops.LogDebugf("Could not get relation data: %v", err.Error())
-		return "", err
+		return "", fmt.Errorf("could not get relation data for unit %s: %w", relations[0], err)
 	}
 
 	endpointStr := relationData["endpoint"]
@@ -111,14 +110,12 @@ func (i *Integration) EnableEndpoints() error {
 
 	lokiEndpoint, err := i.GetEndpoint()
 	if err != nil {
-		goops.LogDebugf("Could not get endpoint: %s", err.Error())
-		return err
+		return fmt.Errorf("could not get endpoint: %w", err)
 	}
 
 	labels, err := i.getLabels()
 	if err != nil {
-		goops.LogDebugf("Could not get labels: %s", err.Error())
-		return err
+		return fmt.Errorf("could not get labels: %w", err)
 	}
 
 	env := goops.ReadEnv()

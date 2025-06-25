@@ -51,6 +51,15 @@ func (i *Integration) GetRelationID() (string, error) {
 }
 
 func (i *Integration) PublishSupportedProtocols(protocols []Protocol) {
+	isLeader, err := goops.IsLeader()
+	if err != nil {
+		goops.LogDebugf("Could not determine if unit is leader: %s", err.Error())
+		return
+	}
+	if !isLeader {
+		goops.LogDebugf("Not the leader, skipping protocol publication")
+		return
+	}
 	relationID, err := i.GetRelationID()
 	if err != nil {
 		goops.LogDebugf("Could not get relation ID: %s", err.Error())

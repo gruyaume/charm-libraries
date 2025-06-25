@@ -50,6 +50,15 @@ func (i *Integration) GetScrapeMetadata() (*ScrapeMetadata, error) {
 }
 
 func (i *Integration) Write() error {
+	isLeader, err := goops.IsLeader()
+	if err != nil {
+		return fmt.Errorf("could not determine if unit is leader: %w", err)
+	}
+
+	if !isLeader {
+		return fmt.Errorf("unit is not the leader and cannot write to app relation data")
+	}
+
 	relationIDs, err := goops.GetRelationIDs(i.RelationName)
 	if err != nil {
 		return fmt.Errorf("could not get relation IDs: %w", err)

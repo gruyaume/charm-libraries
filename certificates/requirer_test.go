@@ -1,12 +1,11 @@
 package certificates_test
 
 import (
+	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"testing"
-
-	"crypto/x509"
 
 	"github.com/gruyaume/charm-libraries/certificates"
 	"github.com/gruyaume/goops/goopstest"
@@ -41,11 +40,11 @@ func TestRequest(t *testing.T) {
 		Charm: RequestExampleUse,
 	}
 
-	certificatesRelation := &goopstest.Relation{
+	certificatesRelation := goopstest.Relation{
 		Endpoint: "certificates",
 	}
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Relations: []goopstest.Relation{
 			certificatesRelation,
 		},
 	}
@@ -53,6 +52,10 @@ func TestRequest(t *testing.T) {
 	stateOut, err := ctx.Run("start", stateIn)
 	if err != nil {
 		t.Fatalf("Run returned an error: %v", err)
+	}
+
+	if ctx.CharmErr != nil {
+		t.Fatalf("charm error: %v", ctx.CharmErr)
 	}
 
 	if len(stateOut.Relations) != 1 {

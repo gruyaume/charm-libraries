@@ -41,13 +41,14 @@ func TestPublishSupportedProtocols(t *testing.T) {
 		Charm: PublishSupportedProtocolsExampleUse,
 	}
 
-	tracingRelation := &goopstest.Relation{
+	tracingRelation := goopstest.Relation{
 		Endpoint:     "tracing",
 		LocalAppData: goopstest.DataBag{},
 	}
 
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Leader: true,
+		Relations: []goopstest.Relation{
 			tracingRelation,
 		},
 	}
@@ -57,13 +58,17 @@ func TestPublishSupportedProtocols(t *testing.T) {
 		t.Fatalf("failed to run charm: %v", err)
 	}
 
+	if ctx.CharmErr != nil {
+		t.Fatalf("charm error: %v", ctx.CharmErr)
+	}
+
 	if len(stateOut.Relations) != 1 {
 		t.Fatalf("expected 1 relation, got %d", len(stateOut.Relations))
 	}
 
 	relationData, ok := stateOut.Relations[0].LocalAppData["receivers"]
 	if !ok {
-		t.Fatal("expected 'provider' key in relation data")
+		t.Fatal("expected 'receivers' in relation data, but it was not found")
 	}
 
 	var supportedProtocols []string
@@ -84,25 +89,24 @@ func TestPublishSupportedProtocols(t *testing.T) {
 	if supportedProtocols[1] != string(tracing.GRPC) && supportedProtocols[1] != string(tracing.HTTP) {
 		t.Fatalf("expected one of the protocols to be 'otlp_grpc' or 'otlp_http', got '%s'", supportedProtocols[1])
 	}
-
 }
 
 func TestGetEndpoint(t *testing.T) {
 	ctx := goopstest.Context{
 		Charm:   GetEndpointExampleUse,
 		AppName: "requirer",
-		UnitID:  0,
+		UnitID:  "requirer/0",
 	}
 
-	tracingRelation := &goopstest.Relation{
+	tracingRelation := goopstest.Relation{
 		Endpoint: "tracing",
 		RemoteAppData: goopstest.DataBag{
 			"receivers": `[{"url": "https://tracing.example.com", "protocol": {"name": "otlp_grpc", "type": "receiver"}}]`,
 		},
 	}
 
-	stateIn := &goopstest.State{
-		Relations: []*goopstest.Relation{
+	stateIn := goopstest.State{
+		Relations: []goopstest.Relation{
 			tracingRelation,
 		},
 	}
