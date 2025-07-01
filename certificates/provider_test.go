@@ -21,7 +21,7 @@ func GetOutstandingCertificateRequestsExampleUse() error {
 
 	requirerRequests, err := ip.GetOutstandingCertificateRequests()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get outstanding certificate requests: %w", err)
 	}
 
 	if len(requirerRequests) != 1 {
@@ -75,9 +75,11 @@ func generateCSR() (string, error) {
 }
 
 func TestGetOutstandingCertificateRequests(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm: GetOutstandingCertificateRequestsExampleUse,
-	}
+	ctx := goopstest.NewContext(
+		GetOutstandingCertificateRequestsExampleUse,
+		goopstest.WithUnitID("provider/0"),
+		goopstest.WithAppName("provider"),
+	)
 
 	csr, err := generateCSR()
 	if err != nil {
@@ -98,7 +100,8 @@ func TestGetOutstandingCertificateRequests(t *testing.T) {
 	}
 
 	certificatesRelation := goopstest.Relation{
-		Endpoint: "certificates",
+		Endpoint:      "certificates",
+		RemoteAppName: "requirer",
 		RemoteUnitsData: map[goopstest.UnitID]goopstest.DataBag{
 			"requirer/0": {
 				"certificate_signing_requests": string(requestData),
@@ -107,14 +110,16 @@ func TestGetOutstandingCertificateRequests(t *testing.T) {
 	}
 
 	stateIn := goopstest.State{
+		Leader: true,
 		Relations: []goopstest.Relation{
 			certificatesRelation,
 		},
 	}
 
-	_, err = ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("Run returned an error: %v", err)
+	_ = ctx.Run("start", stateIn)
+
+	if ctx.CharmErr != nil {
+		t.Fatalf("charm error: %v", ctx.CharmErr)
 	}
 }
 
@@ -154,11 +159,11 @@ type ProviderCertificateRelationData struct {
 }
 
 func TestGetIssuedCertificates(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm:   GetIssuedCertificatesExampleUse,
-		AppName: "test-charm",
-		UnitID:  "test-charm/0",
-	}
+	ctx := goopstest.NewContext(
+		GetIssuedCertificatesExampleUse,
+		goopstest.WithUnitID("test-charm/0"),
+		goopstest.WithAppName("test-charm"),
+	)
 
 	providedCertificates := make([]ProviderCertificateRelationData, 0)
 
@@ -187,10 +192,7 @@ func TestGetIssuedCertificates(t *testing.T) {
 		},
 	}
 
-	stateOut, err := ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("Run returned an error: %v", err)
-	}
+	stateOut := ctx.Run("start", stateIn)
 
 	if len(stateOut.Relations) != 1 {
 		t.Fatalf("expected 1 relation, got %d", len(stateOut.Relations))
@@ -219,9 +221,9 @@ func SetRelationCertificateExampleUse() error {
 }
 
 func TestSetRelationCertificate(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm: SetRelationCertificateExampleUse,
-	}
+	ctx := goopstest.NewContext(
+		SetRelationCertificateExampleUse,
+	)
 
 	certificatesRelation := goopstest.Relation{
 		Endpoint: "certificates",
@@ -237,10 +239,7 @@ func TestSetRelationCertificate(t *testing.T) {
 		},
 	}
 
-	stateOut, err := ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("Run returned an error: %v", err)
-	}
+	stateOut := ctx.Run("start", stateIn)
 
 	if ctx.CharmErr != nil {
 		t.Fatalf("charm error: %v", ctx.CharmErr)
@@ -256,7 +255,7 @@ func TestSetRelationCertificate(t *testing.T) {
 	}
 
 	var certs []certificates.CertificateSigningRequestProviderAppRelationData
-	err = json.Unmarshal([]byte(relationData), &certs)
+	err := json.Unmarshal([]byte(relationData), &certs)
 	if err != nil {
 		t.Fatalf("failed to unmarshal relation data: %v", err)
 	}

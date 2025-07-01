@@ -65,11 +65,11 @@ func GetScrapeMetadataExampleUse() error {
 }
 
 func TestWriteExampleUse(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm:   WriteExampleUse,
-		AppName: "my-charm",
-		UnitID:  "my-charm/0",
-	}
+	ctx := goopstest.NewContext(
+		WriteExampleUse,
+		goopstest.WithAppName("my-charm"),
+		goopstest.WithUnitID("my-charm/0"),
+	)
 
 	prometheusRelation := goopstest.Relation{
 		Endpoint:     "metrics",
@@ -87,10 +87,7 @@ func TestWriteExampleUse(t *testing.T) {
 		},
 	}
 
-	stateOut, err := ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("failed to run charm: %v", err)
-	}
+	stateOut := ctx.Run("start", stateIn)
 
 	if ctx.CharmErr != nil {
 		t.Fatalf("charm error: %v", ctx.CharmErr)
@@ -118,11 +115,11 @@ func TestWriteExampleUse(t *testing.T) {
 }
 
 func TestGetScrapeMetadataExampleUse(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm:   GetScrapeMetadataExampleUse,
-		AppName: "my-charm",
-		UnitID:  "my-charm/0",
-	}
+	ctx := goopstest.NewContext(
+		GetScrapeMetadataExampleUse,
+		goopstest.WithAppName("my-charm"),
+		goopstest.WithUnitID("my-charm/0"),
+	)
 
 	prometheusRelation := goopstest.Relation{
 		Endpoint:     "metrics",
@@ -139,9 +136,10 @@ func TestGetScrapeMetadataExampleUse(t *testing.T) {
 		},
 	}
 
-	stateOut, err := ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("failed to run charm: %v", err)
+	stateOut := ctx.Run("start", stateIn)
+
+	if ctx.CharmErr != nil {
+		t.Fatalf("charm error: %v", ctx.CharmErr)
 	}
 
 	if len(stateOut.Relations) != 1 {

@@ -2,7 +2,7 @@ module github.com/gruyaume/charm-libraries/prometheus
 
 go 1.24.0
 
-require github.com/gruyaume/goops v0.0.22
+require github.com/gruyaume/goops v0.0.23
 
 require (
 	github.com/canonical/pebble v1.22.2 // indirect

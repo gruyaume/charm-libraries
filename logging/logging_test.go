@@ -26,12 +26,13 @@ func GetEndpointExampleUse() error {
 }
 
 func TestGetEndpoint(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm: GetEndpointExampleUse,
-	}
+	ctx := goopstest.NewContext(
+		GetEndpointExampleUse,
+	)
 
 	loggingRelation := goopstest.Relation{
-		Endpoint: "logging",
+		Endpoint:      "logging",
+		RemoteAppName: "provider",
 		RemoteUnitsData: map[goopstest.UnitID]goopstest.DataBag{
 			"provider/0": {
 				"endpoint": `{"url": "https://logging.example.com"}`,
@@ -45,9 +46,10 @@ func TestGetEndpoint(t *testing.T) {
 		},
 	}
 
-	_, err := ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("failed to run charm: %v", err)
+	_ = ctx.Run("start", stateIn)
+
+	if ctx.CharmErr != nil {
+		t.Fatalf("charm error: %v", ctx.CharmErr)
 	}
 }
 
@@ -66,11 +68,11 @@ func EnableEndpointsExampleUse() error {
 }
 
 func TestAddPebbleLayer(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm:   EnableEndpointsExampleUse,
-		AppName: "my-app",
-		UnitID:  "my-app/0",
-	}
+	ctx := goopstest.NewContext(
+		EnableEndpointsExampleUse,
+		goopstest.WithAppName("my-app"),
+		goopstest.WithUnitID("my-app/0"),
+	)
 
 	loggingRelation := goopstest.Relation{
 		Endpoint:      "logging",
@@ -98,10 +100,7 @@ func TestAddPebbleLayer(t *testing.T) {
 		},
 	}
 
-	stateOut, err := ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("failed to run charm: %v", err)
-	}
+	stateOut := ctx.Run("start", stateIn)
 
 	if ctx.CharmErr != nil {
 		t.Fatalf("charm error: %v", ctx.CharmErr)
