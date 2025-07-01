@@ -3,7 +3,7 @@ module github.com/gruyaume/charm-libraries/tracing
 go 1.24.0
 
 require (
-	github.com/gruyaume/goops v0.0.22
+	github.com/gruyaume/goops v0.0.23
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0
 	go.opentelemetry.io/otel/sdk v1.35.0

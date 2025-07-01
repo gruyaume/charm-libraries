@@ -36,9 +36,8 @@ type RequirerRelationData struct {
 }
 
 func TestRequest(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm: RequestExampleUse,
-	}
+	ctx := goopstest.NewContext(
+		RequestExampleUse)
 
 	certificatesRelation := goopstest.Relation{
 		Endpoint: "certificates",
@@ -49,10 +48,7 @@ func TestRequest(t *testing.T) {
 		},
 	}
 
-	stateOut, err := ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("Run returned an error: %v", err)
-	}
+	stateOut := ctx.Run("start", stateIn)
 
 	if ctx.CharmErr != nil {
 		t.Fatalf("charm error: %v", ctx.CharmErr)

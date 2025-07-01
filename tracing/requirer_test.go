@@ -37,9 +37,9 @@ func GetEndpointExampleUse() error {
 }
 
 func TestPublishSupportedProtocols(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm: PublishSupportedProtocolsExampleUse,
-	}
+	ctx := goopstest.NewContext(
+		PublishSupportedProtocolsExampleUse,
+	)
 
 	tracingRelation := goopstest.Relation{
 		Endpoint:     "tracing",
@@ -53,10 +53,7 @@ func TestPublishSupportedProtocols(t *testing.T) {
 		},
 	}
 
-	stateOut, err := ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("failed to run charm: %v", err)
-	}
+	stateOut := ctx.Run("start", stateIn)
 
 	if ctx.CharmErr != nil {
 		t.Fatalf("charm error: %v", ctx.CharmErr)
@@ -73,7 +70,7 @@ func TestPublishSupportedProtocols(t *testing.T) {
 
 	var supportedProtocols []string
 
-	err = json.Unmarshal([]byte(relationData), &supportedProtocols)
+	err := json.Unmarshal([]byte(relationData), &supportedProtocols)
 	if err != nil {
 		t.Fatalf("failed to unmarshal relation data: %v", err)
 	}
@@ -92,16 +89,20 @@ func TestPublishSupportedProtocols(t *testing.T) {
 }
 
 func TestGetEndpoint(t *testing.T) {
-	ctx := goopstest.Context{
-		Charm:   GetEndpointExampleUse,
-		AppName: "requirer",
-		UnitID:  "requirer/0",
-	}
+	ctx := goopstest.NewContext(
+		GetEndpointExampleUse,
+		goopstest.WithAppName("requirer"),
+		goopstest.WithUnitID("requirer/0"),
+	)
 
 	tracingRelation := goopstest.Relation{
-		Endpoint: "tracing",
+		Endpoint:      "tracing",
+		RemoteAppName: "provider",
 		RemoteAppData: goopstest.DataBag{
 			"receivers": `[{"url": "https://tracing.example.com", "protocol": {"name": "otlp_grpc", "type": "receiver"}}]`,
+		},
+		RemoteUnitsData: map[goopstest.UnitID]goopstest.DataBag{ // We set unit rel data because of issue #82 in goops
+			"provider/0": {},
 		},
 	}
 
@@ -111,8 +112,9 @@ func TestGetEndpoint(t *testing.T) {
 		},
 	}
 
-	_, err := ctx.Run("start", stateIn)
-	if err != nil {
-		t.Fatalf("failed to run charm: %v", err)
+	_ = ctx.Run("start", stateIn)
+
+	if ctx.CharmErr != nil {
+		t.Fatalf("charm error: %v", ctx.CharmErr)
 	}
 }
